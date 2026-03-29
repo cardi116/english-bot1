@@ -1,0 +1,4 @@
+2026-03-26 14:25:10.736265+05:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Синтаксическая ошибка в выражении SQL "SELECT * FROM USERS USERS [*]USER_WORDS USER_WORDS"
+Syntax error in SQL statement "SELECT * FROM USERS USERS [*]USER_WORDS USER_WORDS"; SQL statement:
+SELECT * FROM USERS USERS USER_WORDS USER_WORDS [42000-240]
