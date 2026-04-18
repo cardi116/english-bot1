@@ -2,3 +2,29 @@
 org.h2.jdbc.JdbcSQLSyntaxErrorException: Синтаксическая ошибка в выражении SQL "SELECT * FROM USERS USERS [*]USER_WORDS USER_WORDS"
 Syntax error in SQL statement "SELECT * FROM USERS USERS [*]USER_WORDS USER_WORDS"; SQL statement:
 SELECT * FROM USERS USERS USER_WORDS USER_WORDS [42000-240]
+2026-04-18 12:15:02.545112+05:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Столбцы предложения ORDER BY "RAND()" в данном случае должны содержаться в выбираемом списке
+Order by expression "RAND()" must be in the result list in this case; SQL statement:
+SELECT DISTINCT translation FROM user_words WHERE translation != ? ORDER BY RAND() LIMIT ? [90068-224]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:644)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489)
+	at org.h2.message.DbException.get(DbException.java:223)
+	at org.h2.message.DbException.get(DbException.java:199)
+	at org.h2.command.query.Query.initExpression(Query.java:676)
+	at org.h2.command.query.Query.initOrder(Query.java:593)
+	at org.h2.command.query.Select.init(Select.java:1011)
+	at org.h2.command.Parser.parseQuery(Parser.java:2501)
+	at org.h2.command.Parser.parsePrepared(Parser.java:627)
+	at org.h2.command.Parser.parse(Parser.java:592)
+	at org.h2.command.Parser.parse(Parser.java:564)
+	at org.h2.command.Parser.prepareCommand(Parser.java:483)
+	at org.h2.engine.SessionLocal.prepareLocal(SessionLocal.java:639)
+	at org.h2.engine.SessionLocal.prepareCommand(SessionLocal.java:559)
+	at org.h2.jdbc.JdbcConnection.prepareCommand(JdbcConnection.java:1166)
+	at org.h2.jdbc.JdbcPreparedStatement.<init>(JdbcPreparedStatement.java:93)
+	at org.h2.jdbc.JdbcConnection.prepareStatement(JdbcConnection.java:316)
+	at com.englishbot.Database.getWrongTranslations(Database.java:304)
+	at com.englishbot.Main.onUpdateReceived(Main.java:224)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at org.telegram.telegrambots.meta.generics.LongPollingBot.onUpdatesReceived(LongPollingBot.java:27)
+	at org.telegram.telegrambots.updatesreceivers.DefaultBotSession$HandlerThread.run(DefaultBotSession.java:312)

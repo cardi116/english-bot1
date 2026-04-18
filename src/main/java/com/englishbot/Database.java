@@ -47,10 +47,20 @@ public class Database {
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
             )
         """;
+// Таблица состояний пользователей (для тренировки)
+        String createStatesTable = """
+        CREATE TABLE IF NOT EXISTS user_states (
+            user_id BIGINT PRIMARY KEY,
+            state VARCHAR(50),
+            current_word VARCHAR(100),
+            FOREIGN KEY (user_id) REFERENCES users(user_id)
+        )
+    """;
 
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(createUsersTable);
             stmt.execute(createWordsTable);
+            stmt.execute(createStatesTable);  // Добавить эту строку
             System.out.println("✅ Таблицы созданы/проверены");
         }
     }
@@ -240,5 +250,83 @@ public class Database {
         } catch (SQLException e) {
             System.out.println("❌ Ошибка закрытия БД: " + e.getMessage());
         }
+
+    }
+    // Сохранить состояние пользователя
+    public void setUserState(long userId, String state, String currentWord) {
+        String sql = "MERGE INTO user_states (user_id, state, current_word) VALUES (?, ?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setLong(1, userId);
+            pstmt.setString(2, state);
+            pstmt.setString(3, currentWord);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("❌ Ошибка сохранения состояния: " + e.getMessage());
+        }
+    }
+
+    // Получить состояние пользователя
+    public Map<String, String> getUserState(long userId) {
+        String sql = "SELECT state, current_word FROM user_states WHERE user_id = ?";
+        Map<String, String> state = new HashMap<>();
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setLong(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                state.put("state", rs.getString("state"));
+                state.put("current_word", rs.getString("current_word"));
+            } else {
+                state.put("state", "IDLE");
+                state.put("current_word", null);
+            }
+        } catch (SQLException e) {
+            System.out.println("❌ Ошибка получения состояния: " + e.getMessage());
+        }
+        return state;
+    }
+
+    // Сбросить состояние
+    public void resetUserState(long userId) {
+        String sql = "DELETE FROM user_states WHERE user_id = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setLong(1, userId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("❌ Ошибка сброса состояния: " + e.getMessage());
+        }
+    }
+    // Получение неправильных вариантов перевода для кнопок викторины
+    public List<String> getWrongTranslations(String correctTranslation, int count) {
+        List<String> wrongs = new ArrayList<>();
+        // В базе H2 для случайной сортировки используется RAND()
+        String sql = "SELECT DISTINCT translation FROM user_words WHERE translation != ? ORDER BY RAND() LIMIT ?";
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, correctTranslation);
+            pstmt.setInt(2, count);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                wrongs.add(rs.getString("translation"));
+            }
+        } catch (SQLException e) {
+            System.out.println("❌ Ошибка получения вариантов перевода: " + e.getMessage());
+        }
+
+        // Защита от пустой базы:
+        // Если в словаре мало слов и база не смогла найти 3 неправильных варианта,
+        // мы добавим стандартные слова-заглушки, чтобы программа не вылетела с ошибкой.
+        List<String> fallbacks = Arrays.asList("яблоко", "машина", "книга", "дом", "собака", "университет", "компьютер", "солнце");
+        int fallbackIndex = 0;
+
+        while (wrongs.size() < count) {
+            String fallback = fallbacks.get(fallbackIndex % fallbacks.size());
+            // Добавляем заглушку, только если она не совпадает с правильным ответом
+            if (!wrongs.contains(fallback) && !fallback.equalsIgnoreCase(correctTranslation)) {
+                wrongs.add(fallback);
+            }
+            fallbackIndex++;
+        }
+
+        return wrongs;
     }
 }
